@@ -1,0 +1,102 @@
+
+// Developer: Forex Robot Easy Team
+// Developer's Site: forexroboteasy.com
+// Program Name: Wave Trend MT4
+
+#property strict
+
+// Input parameters
+input int FastMaPeriod = 5;        // Period for the fast moving average
+input int SlowMaPeriod = 10;       // Period for the slow moving average
+input int OverboughtLevel = 70;    // Overbought level for the oscillator
+input int OversoldLevel = 30;      // Oversold level for the oscillator
+
+// Global variables
+double fastMaBuffer[];             // Buffer to store fast moving average values
+double slowMaBuffer[];             // Buffer to store slow moving average values
+
+// Initialization function
+int OnInit()
+{
+    // Allocate memory for the buffers
+    ArrayResize(fastMaBuffer, Bars);
+    ArrayResize(slowMaBuffer, Bars);
+    
+    // Set the indicator labels
+    IndicatorSetString(INDICATOR_SHORTNAME, 'Wave Trend MT4');
+    IndicatorSetString(INDICATOR_LEVELS, 'Overbought, Oversold');
+    IndicatorSetDouble(INDICATOR_LEVELVALUE, 0, OverboughtLevel);
+    IndicatorSetDouble(INDICATOR_LEVELVALUE, 1, OversoldLevel);
+
+    return(INIT_SUCCEEDED);
+}
+
+// Deinitialization function
+void OnDeinit(const int reason)
+{
+    // Free the memory used by the buffers
+    ArrayFree(fastMaBuffer);
+    ArrayFree(slowMaBuffer);
+}
+
+// Custom function to calculate the moving average
+double MovingAverage(const int period, const int shift, const int mode, const double price[])
+{
+    double sum = 0.0;
+    for(int i = shift; i < shift + period; i++)
+        sum += price[i];
+    return sum / period;
+}
+
+// Custom function to check for a crossover
+bool CrossOver(const double value1, const double value2)
+{
+    return (value1 > value2) && (value1[1] <= value2[1]);
+}
+
+// Custom function to check for a divergence
+bool Divergence(const double value1, const double value2)
+{
+    return (value1 > value2) && (value1[1] <= value2[1]) && (value1[2] <= value2[2]);
+}
+
+// Entry point function
+void OnTick()
+{
+    // Calculate the fast moving average
+    double fastMa = MovingAverage(FastMaPeriod, 0, MODE_SMA, Close);
+    
+    // Calculate the slow moving average
+    double slowMa = MovingAverage(SlowMaPeriod, 0, MODE_SMA, Close);
+    
+    // Store the moving average values in the buffers
+    fastMaBuffer[0] = fastMa;
+    slowMaBuffer[0] = slowMa;
+
+    // Check for a crossover
+    if (CrossOver(fastMa, slowMa))
+    {
+        // Generate a sell signal
+        Comment('Sell signal generated');
+        // Add your code here to execute a sell trade
+        return;
+    }
+    
+    // Check for a crossunder
+    if (CrossOver(slowMa, fastMa))
+    {
+        // Generate a buy signal
+        Comment('Buy signal generated');
+        // Add your code here to execute a buy trade
+        return;
+    }
+    
+    // Check for a divergence
+    if (Divergence(fastMa, slowMa))
+    {
+        // Generate a divergence signal
+        Comment('Divergence detected');
+        // Add your code here to take appropriate action
+        return;
+    }
+}
